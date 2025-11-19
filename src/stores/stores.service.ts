@@ -1,26 +1,78 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 
 @Injectable()
 export class StoresService {
-  create(createStoreDto: CreateStoreDto) {
-    return 'This action adds a new store';
+  constructor(private prisma: PrismaService) {}
+
+  // ----------------------------
+  // CREATE STORE
+  // ----------------------------
+  async create(dto: CreateStoreDto) {
+    return await this.prisma.store.create({
+      data: {
+        name: dto.name,
+        slug: dto.slug,
+        ownerId: dto.ownerId,
+        logo: dto.logo,
+        summary: dto.summary,
+      },
+    });
   }
 
-  findAll() {
-    return `This action returns all stores`;
+  // ----------------------------
+  // FIND ALL STORES
+  // ----------------------------
+  async findAll() {
+    return await this.prisma.store.findMany({
+      include: {
+        owner: true,
+        products: true,
+      },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} store`;
+  // ----------------------------
+  // FIND ONE STORE
+  // ----------------------------
+  async findOne(id: string) {
+    const store = await this.prisma.store.findUnique({
+      where: { id },
+      include: {
+        owner: true,
+        products: true,
+      },
+    });
+
+    if (!store) throw new NotFoundException('Store not found');
+
+    return store;
   }
 
-  update(id: number, updateStoreDto: UpdateStoreDto) {
-    return `This action updates a #${id} store`;
+  // ----------------------------
+  // UPDATE STORE
+  // ----------------------------
+  async update(id: string, dto: UpdateStoreDto) {
+    const exists = await this.prisma.store.findUnique({ where: { id } });
+    if (!exists) throw new NotFoundException('Store not found');
+
+    return await this.prisma.store.update({
+      where: { id },
+      data: dto,
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} store`;
+  // ----------------------------
+  // DELETE STORE
+  // ----------------------------
+  async remove(id: string) {
+    const exists = await this.prisma.store.findUnique({ where: { id } });
+    if (!exists) throw new NotFoundException('Store not found');
+
+    return await this.prisma.store.delete({
+      where: { id },
+    });
   }
 }

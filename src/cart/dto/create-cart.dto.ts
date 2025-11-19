@@ -1,1 +1,7 @@
-export class CreateCartDto {}
+import { IsNotEmpty, IsUUID } from 'class-validator';
+
+export class CreateCartDto {
+  @IsUUID()
+  @IsNotEmpty()
+  userId: string;
+}
