@@ -43,6 +43,7 @@ export class StoresService {
   // ----------------------------
   async findAll() {
     return await this.prisma.store.findMany({
+      where: { isDeleted: false },
       include: {
         owner: true,
         products: true,
@@ -55,7 +56,7 @@ export class StoresService {
   // ----------------------------
   async findOne(id: string) {
     const store = await this.prisma.store.findUnique({
-      where: { id },
+      where: { id,isDeleted:false },
       include: {
         owner: true,
         products: true,
@@ -86,9 +87,11 @@ export class StoresService {
   async remove(id: string) {
     const exists = await this.prisma.store.findUnique({ where: { id } });
     if (!exists) throw new NotFoundException('Store not found');
-
-    return await this.prisma.store.delete({
-      where: { id },
+  
+    return this.prisma.store.update({
+      where: { id ,isDeleted: false, },
+      data: { isDeleted: true },
     });
   }
+  
 }
