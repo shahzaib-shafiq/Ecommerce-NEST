@@ -31,7 +31,7 @@ export class AuthService {
 
     // 3. Create JWT payload (encrypted)
     const payload = {
-      sub: user.id,
+      userId: user.id,
       role: user.role,
     };
 
