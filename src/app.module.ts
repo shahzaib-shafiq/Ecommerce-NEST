@@ -5,6 +5,8 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { StoresModule } from './stores/stores.module';
 import { ProductsModule } from './products/products.module';
+import { CartModule } from './cart/cart.module';
+import { OrdersModule } from './orders/orders.module';
 // import other modules
 
 @Module({
@@ -19,6 +21,8 @@ import { ProductsModule } from './products/products.module';
     UsersModule,
     StoresModule,
     ProductsModule,
+    CartModule,
+    OrdersModule,
     
     // other modules...
   ],

@@ -13,95 +13,365 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// -------------------------
-// Enums
-// -------------------------
+// --------------------
+// ENUMS
+// --------------------
+
 enum Role {
+  USER
   ADMIN
-  SELLER
-  CUSTOMER
-  MANAGER
-  DELIVERY
 }
 
 enum OrderStatus {
   PENDING
   PAID
   SHIPPED
-  DELIVERED
+  COMPLETED
   CANCELLED
-  REFUNDED
+}
+
+enum PaymentMethod {
+  CARD
+  COD
+  BANK_TRANSFER
+  WALLET
 }
 
 enum PaymentStatus {
   PENDING
-  COMPLETED
+  PAID
   FAILED
   REFUNDED
 }
 
-enum ProductStatus {
-  ACTIVE
-  OUT_OF_STOCK
-  DISCONTINUED
+enum InventoryEvent {
+  PURCHASE
+  CANCEL
+  REFUND
+  ADMIN_UPDATE
 }
 
-//Prisma schema
+enum ShippingStatus {
+  PENDING
+  SHIPPED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
+  RETURNED
+}
 
+enum DiscountType {
+  PERCENTAGE
+  FLAT
+}
+
+// --------------------
+// MODELS
+// --------------------
+
+// USER
 model User {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  firstName    String   @db.VarChar(50)
-  lastName     String   @db.VarChar(50)
-  email        String   @unique @db.VarChar(50)
-  password     String   @db.VarChar(255)
+  firstName    String
+  lastName     String
+  email        String   @unique
+  password     String
   role         Role
   summary      String?
-  adress       String?  @db.VarChar(255)
+  adress       String?
   isDeleted    Boolean  @default(false)
   isVerified   Boolean  @default(true)
   refreshToken String?
-  phone        String?  @db.VarChar(12)
+  phone        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-   stores       Store[]
-   products Product[]
+  stores   Store[]
+  products Product[]
+  carts    Cart[]
+  orders   Order[]
+
+  reviews     Review[]
+  wishlist    Wishlist[]
+  couponUsage CouponUsage[]
+  addresses   Address[]
 }
 
-
+// STORE
 model Store {
-   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name      String
-  slug      String   @unique
-  ownerId   String   @db.Uuid
-  owner     User     @relation(fields: [ownerId], references: [id])
-  logo      String?
-  summary   String?
+  id      String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name    String
+  slug    String  @unique
+  ownerId String  @db.Uuid
+  owner   User    @relation(fields: [ownerId], references: [id])
+  logo    String?
+  summary String?
+
+  products Product[]
+  orders   Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// PRODUCT
+model Product {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String   @unique
+  description String?
+  price       Float
+  stock       Int      @default(0)
+  images      String[]
+
+  storeId String @db.Uuid
+  store   Store  @relation(fields: [storeId], references: [id])
+
+  createdById String @db.Uuid
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  isDeleted Boolean @default(false)
+
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  reviews       Review[]
+  wishlist      Wishlist[]
+  inventoryLogs InventoryLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// CART
+model Cart {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id])
+
+  items    CartItem[]
+  isActive Boolean    @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// CART ITEM
+model CartItem {
+  id String @id @default(uuid()) @db.Uuid
+
+  cartId String @db.Uuid
+  cart   Cart   @relation(fields: [cartId], references: [id])
+
+  productId String  @db.Uuid
+  product   Product @relation(fields: [productId], references: [id])
+
+  quantity Int @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ORDER
+model Order {
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id])
+
+  storeId String @db.Uuid
+  store   Store  @relation(fields: [storeId], references: [id])
+
+  total  Float
+  status OrderStatus @default(PENDING)
+
+  items         OrderItem[]
+  payments      Payment[]
+  statusHistory OrderStatusHistory[]
+  shipping      Shipping?
+  couponUsage   CouponUsage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ORDER ITEM
+model OrderItem {
+  id String @id @default(uuid()) @db.Uuid
+
+  orderId String @db.Uuid
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  productId String  @db.Uuid
+  product   Product @relation(fields: [productId], references: [id])
+
+  price    Float
+  quantity Int   @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// PAYMENT
+model Payment {
+  id String @id @default(uuid()) @db.Uuid
+
+  orderId String @db.Uuid
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  amount        Float
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  transactionId String?
+  metadata      Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ORDER STATUS HISTORY
+model OrderStatusHistory {
+  id String @id @default(uuid()) @db.Uuid
+
+  orderId String @db.Uuid
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  status    OrderStatus
+  note      String?
+  createdAt DateTime    @default(now())
+}
+
+// INVENTORY LOG
+model InventoryLog {
+  id String @id @default(uuid()) @db.Uuid
+
+  productId String  @db.Uuid
+  product   Product @relation(fields: [productId], references: [id])
+
+  change    Int
+  type      InventoryEvent
+  createdAt DateTime       @default(now())
+}
+
+// ADDRESS
+model Address {
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id])
+
+  line1   String
+  line2   String?
+  city    String
+  state   String
+  country String
+  postal  String
+  phone   String?
+
+  shipping Shipping[] // <── FIXED: Reverse relation
+
+  createdAt DateTime @default(now())
+}
+
+// REVIEW
+model Review {
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id])
+
+  productId String  @db.Uuid
+  product   Product @relation(fields: [productId], references: [id])
+
+  rating  Int
+  comment String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
- products  Product[]
+  @@unique([userId, productId])
 }
 
-model Product {
-  id          String    @id @default(uuid())
-  name        String
-  slug        String    @unique
-  description String?
-  price       Float
-  stock       Int       @default(0)
-  images      String[]  // array of URLs
+// WISHLIST
+model Wishlist {
+  id String @id @default(uuid()) @db.Uuid
 
-  // Relations
-  storeId     String    @db.Uuid
-  store       Store     @relation(fields: [storeId], references: [id])
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id])
 
-  createdById String    @db.Uuid
-  createdBy   User      @relation(fields: [createdById], references: [id])
+  productId String  @db.Uuid
+  product   Product @relation(fields: [productId], references: [id])
 
-  isDeleted   Boolean   @default(false)
+  createdAt DateTime @default(now())
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  @@unique([userId, productId])
 }
 
+// COUPON
+model Coupon {
+  id             String       @id @default(uuid()) @db.Uuid
+  code           String       @unique
+  description    String?
+  discountType   DiscountType
+  discountValue  Float
+  minOrderAmount Float?
+
+  startDate DateTime
+  endDate   DateTime
+
+  usageLimit   Int?
+  perUserLimit Int?
+  isActive     Boolean @default(true)
+
+  usedBy CouponUsage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CouponUsage {
+  id String @id @default(uuid()) @db.Uuid
+
+  couponId String @db.Uuid
+  coupon   Coupon @relation(fields: [couponId], references: [id])
+
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id])
+
+  orderId String? @db.Uuid
+  order   Order?  @relation(fields: [orderId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+// SHIPPING
+model Shipping {
+  id String @id @default(uuid()) @db.Uuid
+
+  orderId String @unique @db.Uuid // 1-to-1 FIX
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  provider       String
+  trackingNumber String?
+  status         ShippingStatus @default(PENDING)
+
+  addressId String?  @db.Uuid
+  address   Address? @relation(fields: [addressId], references: [id])
+
+  history ShippingHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ShippingHistory {
+  id String @id @default(uuid()) @db.Uuid
+
+  shippingId String   @db.Uuid
+  shipping   Shipping @relation(fields: [shippingId], references: [id])
+
+  status    ShippingStatus
+  location  String?
+  note      String?
+  createdAt DateTime       @default(now())
+}
