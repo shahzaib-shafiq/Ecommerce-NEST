@@ -13,7 +13,7 @@ async function main() {
       lastName: 'Doe',
       email: 'john@test.com',
       password: 'hashedpassword',
-      role: Role.USER,
+      role: Role.STORE_OWNER,
       isVerified: true
     }
   });
