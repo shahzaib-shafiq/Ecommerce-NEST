@@ -45,22 +45,63 @@ enum ProductStatus {
   OUT_OF_STOCK
   DISCONTINUED
 }
+
 //Prisma schema
 
 model User {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  firstName     String   @db.VarChar(50)
-  lastName      String   @db.VarChar(50)
-  email         String   @unique @db.VarChar(50)
-  password      String   @db.VarChar(255)
-  role          Role
-  summary       String?
-  adress        String?  @db.VarChar(255)
-  isDeleted     Boolean  @default(false)
-  isVerified    Boolean  @default(true)
-  refreshToken  String?
-  phone         String?  @db.VarChar(12)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firstName    String   @db.VarChar(50)
+  lastName     String   @db.VarChar(50)
+  email        String   @unique @db.VarChar(50)
+  password     String   @db.VarChar(255)
+  role         Role
+  summary      String?
+  adress       String?  @db.VarChar(255)
+  isDeleted    Boolean  @default(false)
+  isVerified   Boolean  @default(true)
+  refreshToken String?
+  phone        String?  @db.VarChar(12)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
+   stores       Store[]
+   products Product[]
 }
+
+
+model Store {
+   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  slug      String   @unique
+  ownerId   String   @db.Uuid
+  owner     User     @relation(fields: [ownerId], references: [id])
+  logo      String?
+  summary   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+ products  Product[]
+}
+
+model Product {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  description String?
+  price       Float
+  stock       Int       @default(0)
+  images      String[]  // array of URLs
+
+  // Relations
+  storeId     String    @db.Uuid
+  store       Store     @relation(fields: [storeId], references: [id])
+
+  createdById String    @db.Uuid
+  createdBy   User      @relation(fields: [createdById], references: [id])
+
+  isDeleted   Boolean   @default(false)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
