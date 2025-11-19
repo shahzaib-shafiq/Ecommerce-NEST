@@ -1,0 +1,154 @@
+{
+  "info": {
+    "_postman_id": "ecs-auto-generated",
+    "name": "ECS API Collection (Auto-Generated)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get User Profile",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/users/f1bf0fb7-3830-4d5d-bc90-8ecdb9e0906c"
+      }
+    },
+    {
+      "name": "Get All Products",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/products"
+      }
+    },
+    {
+      "name": "Get Product by ID",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/products/aa288e16-39fe-4480-aee6-403606d821f6"
+      }
+    },
+    {
+      "name": "Get Cart for User",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/cart/f1bf0fb7-3830-4d5d-bc90-8ecdb9e0906c"
+      }
+    },
+    {
+      "name": "Add Item to Cart",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"f1bf0fb7-3830-4d5d-bc90-8ecdb9e0906c\",\n  \"productId\": \"aa288e16-39fe-4480-aee6-403606d821f6\",\n  \"quantity\": 1\n}"
+        },
+        "url": "http://localhost:3000/cart/add"
+      }
+    },
+    {
+      "name": "Get Store",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/store/4596f5b6-da00-4a11-bc2a-291a8f90d377"
+      }
+    },
+    {
+      "name": "Get Orders for User",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/orders/f1bf0fb7-3830-4d5d-bc90-8ecdb9e0906c"
+      }
+    },
+    {
+      "name": "Get Order Details",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/orders/details/18628416-b1be-4fa8-8180-cbfdd81ee331"
+      }
+    },
+    {
+      "name": "Create Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"f1bf0fb7-3830-4d5d-bc90-8ecdb9e0906c\",\n  \"storeId\": \"4596f5b6-da00-4a11-bc2a-291a8f90d377\",\n  \"items\": [\n    {\n      \"productId\": \"aa288e16-39fe-4480-aee6-403606d821f6\",\n      \"quantity\": 1\n    }\n  ]\n}"
+        },
+        "url": "http://localhost:3000/orders/create"
+      }
+    },
+    {
+      "name": "Get Shipping",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/shipping/58af4396-6dd4-4629-99f7-2f1eb054dff3"
+      }
+    },
+    {
+      "name": "Get Reviews for Product",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/reviews/product/aa288e16-39fe-4480-aee6-403606d821f6"
+      }
+    },
+    {
+      "name": "Add Review",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"f1bf0fb7-3830-4d5d-bc90-8ecdb9e0906c\",\n  \"productId\": \"aa288e16-39fe-4480-aee6-403606d821f6\",\n  \"rating\": 5,\n  \"comment\": \"Great product!\"\n}"
+        },
+        "url": "http://localhost:3000/reviews/add"
+      }
+    },
+    {
+      "name": "Get Wishlist",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/wishlist/f1bf0fb7-3830-4d5d-bc90-8ecdb9e0906c"
+      }
+    },
+    {
+      "name": "Add to Wishlist",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"f1bf0fb7-3830-4d5d-bc90-8ecdb9e0906c\",\n  \"productId\": \"aa288e16-39fe-4480-aee6-403606d821f6\"\n}"
+        },
+        "url": "http://localhost:3000/wishlist/add"
+      }
+    },
+    {
+      "name": "Get Coupon",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/coupon/WELCOME10"
+      }
+    }
+  ]
+}
