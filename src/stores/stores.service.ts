@@ -1,8 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException,ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
-
+import { Role } from '../../common/enums/Roles';
 @Injectable()
 export class StoresService {
   constructor(private prisma: PrismaService) {}
@@ -11,6 +11,21 @@ export class StoresService {
   // CREATE STORE
   // ----------------------------
   async create(dto: CreateStoreDto) {
+    // CHECK IF USER EXISTS
+    const user = await this.prisma.user.findUnique({
+      where: { id: dto.ownerId },
+    });
+  
+    if (!user) {
+      throw new NotFoundException(`User with ID ${dto.ownerId} not found`);
+    }
+  
+    // CHECK IF USER ROLE IS STORE_OWNER
+    if (user.role !== Role.STORE_OWNER) {
+      throw new ForbiddenException(`User is not a store owner`);
+    }
+  
+    // CREATE STORE
     return await this.prisma.store.create({
       data: {
         name: dto.name,
@@ -21,6 +36,7 @@ export class StoresService {
       },
     });
   }
+  
 
   // ----------------------------
   // FIND ALL STORES
