@@ -138,6 +138,9 @@ model Product {
 
   isDeleted Boolean @default(false)
 
+  categoryId  String?      @db.Uuid
+  category    Category?    @relation(fields: [categoryId], references: [id])
+
   cartItems     CartItem[]
   orderItems    OrderItem[]
   reviews       Review[]
@@ -379,4 +382,11 @@ model ShippingHistory {
   location  String?
   note      String?
   createdAt DateTime       @default(now())
+}
+
+model Category {
+  id        String     @id @default(uuid()) @db.Uuid
+  name      String     @unique
+
+  products  Product[]  // one category → many products
 }
