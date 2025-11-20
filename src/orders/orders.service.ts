@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
@@ -12,106 +12,128 @@ export class OrdersService {
   // CREATE ORDER
   // ----------------------------
   async create(dto: CreateOrderDto) {
-    // Calculate total price
-    let total = 0;
-
-    for (const item of dto.items) {
-      const product = await this.prisma.product.findUnique({
-        where: { id: item.productId },
+    const { userId, storeId, couponId } = dto;
+  
+    // Validate user
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+  
+    // Validate store
+    const store = await this.prisma.store.findUnique({ where: { id: storeId } });
+    if (!store) throw new NotFoundException('Store not found');
+  
+    // Validate coupon
+    if (couponId) {
+      const coupon = await this.prisma.coupon.findUnique({
+        where: { id: couponId },
       });
-
-      if (!product) throw new NotFoundException('Product not found');
-
-      total += product.price * item.quantity;
+      if (!coupon) throw new BadRequestException('Invalid couponId');
     }
-
-    // Create order + items
-    return await this.prisma.order.create({
-      data: {
-        userId: dto.userId,
-        storeId: dto.storeId,
-        total,
-        status: OrderStatus.PAID,
-        items: {
-          create: dto.items.map((i) => ({
-            productId: i.productId,
-            quantity: i.quantity,
-            price: total, // Or product.price
-          })),
+  
+    // Transaction
+    return this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.create({
+        data: {
+          userId,
+          storeId,
+          total: dto.total,
+          status: 'PENDING',
+  
+          items: {
+            create: dto.items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              price: item.price,
+            })),
+          },
+  
+          couponUsage: couponId
+            ? {
+                create: {
+                  couponId,
+                  userId, // REQUIRED BY PRISMA
+                },
+              }
+            : undefined,
         },
-      },
-      include: { items: true },
+      });
+  
+      await tx.orderStatusHistory.create({
+        data: { orderId: order.id, status: 'PENDING' },
+      });
+  
+      return order;
     });
   }
-
-  // ----------------------------
-  // FIND ALL ORDERS
-  // ----------------------------
-  async findAll() {
-    return await this.prisma.order.findMany({
-      include: { items: true, user: true, store: true },
-    });
-  }
-
-  // ----------------------------
-  // FIND ONE ORDER
-  // ----------------------------
+  
   async findOne(id: string) {
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: { items: true, user: true, store: true },
+      include: {
+        items: true,
+        payments: true,
+        shipping: true,
+        statusHistory: true,
+        couponUsage: true,
+      },
     });
 
     if (!order) throw new NotFoundException('Order not found');
-
     return order;
   }
 
-  // ----------------------------
-  // UPDATE ORDER
-  // // ----------------------------
-  // async update(id: string, dto: UpdateOrderDto) {
-  //   const exists = await this.prisma.order.findUnique({ where: { id } });
-  //   if (!exists) throw new NotFoundException('Order not found');
-  
-  //   // CLEAN DTO ❗
-  //   const { userId, storeId, ...allowedData } = dto; // remove forbidden fields
-  
-  //   return await this.prisma.order.update({
-  //     where: { id },
-  //     data: allowedData,
-  //   });
-  // }
-  
-  // ----------------------------
-  // DELETE ORDER
-  // ----------------------------
-  async remove(id: string) {
-    const exists = await this.prisma.order.findUnique({ where: { id } });
-
-    if (!exists) throw new NotFoundException('Order not found');
-
-    return await this.prisma.order.delete({
-      where: { id },
+  async findAll() {
+    return this.prisma.order.findMany({
+      include: {
+        items: true,
+        shipping: true,
+        statusHistory: true,
+      },
     });
   }
 
+  async updateStatus(id: string, status: OrderStatus) {
+    const order = await this.prisma.order.findUnique({ where: { id } });
 
-  // ----------------------------
-// FIND ORDERS BY USER
-// ----------------------------
-async findByUser(userId: string) {
-  return await this.prisma.order.findMany({
-    where: { userId },
-    include: {
-      items: true,
-      store: true,
-      user: true,
-      payments: true,
-      shipping: true,
-      statusHistory: true,
-    },
-  });
-}
+    if (!order) throw new NotFoundException('Order not found');
 
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.order.update({
+        where: { id },
+        data: { status },
+      });
+
+      await tx.orderStatusHistory.create({
+        data: {
+          orderId: id,
+          status,
+        },
+      });
+
+      return updated;
+    });
+  }
+
+  async findByUser(userId: string) {
+    return this.prisma.order.findMany({
+      where: { userId },
+      include: {
+        items: true,
+        payments: true,
+        shipping: true,
+        statusHistory: true,
+        couponUsage: true,
+      },
+    });
+  }
+  async remove(id: string) {
+    const order = await this.prisma.order.findUnique({ where: { id } });
+    if (!order) throw new NotFoundException('Order not found');
+  
+    return this.prisma.order.update({
+      where: { id },
+      data: { isDeleted: true },
+    });
+  }
+  
 }

@@ -16,22 +16,22 @@ export class OrdersController {
     return this.ordersService.create(dto);
   }
 
-  // --------------------------------------------------
-  // GET ALL ORDERS
-  // GET /orders
-  // --------------------------------------------------
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.ordersService.findOne(id);
+  }
+
+  @Patch(':id/status')
+  updateStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateOrderDto,
+  ) {
+    return this.ordersService.updateStatus(id, dto.status);
+  }
+
   @Get()
   findAll() {
     return this.ordersService.findAll();
-  }
-
-  // --------------------------------------------------
-  // GET ORDER BY ID
-  // GET /orders/:id
-  // --------------------------------------------------
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.ordersService.findOne(id); // UUID → do NOT convert to number
   }
 
   // --------------------------------------------------
