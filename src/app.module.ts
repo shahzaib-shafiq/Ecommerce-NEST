@@ -7,6 +7,7 @@ import { StoresModule } from './stores/stores.module';
 import { ProductsModule } from './products/products.module';
 import { CartModule } from './cart/cart.module';
 import { OrdersModule } from './orders/orders.module';
+import { PaymentModule } from './payment/payment.module';
 // import other modules
 
 @Module({
@@ -23,6 +24,7 @@ import { OrdersModule } from './orders/orders.module';
     ProductsModule,
     CartModule,
     OrdersModule,
+    PaymentModule,
     
     // other modules...
   ],
