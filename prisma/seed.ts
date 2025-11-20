@@ -1,284 +1,181 @@
-import { PrismaClient, Role, OrderStatus, PaymentMethod, PaymentStatus, ShippingStatus, DiscountType, InventoryEvent } from '@prisma/client';
+// prisma/seed.ts
+import { PrismaClient, Role, OrderStatus, PaymentMethod } from '@prisma/client';
+
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting seed...');
+  console.log('🌱 Running Minimal Seed...');
 
-  // --------------------------
-  // 1. USERS
-  // --------------------------
-  const user = await prisma.user.create({
-    data: {
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john@test.com',
-      password: 'hashedpassword',
-      role: Role.STORE_OWNER,
-      isVerified: true
-    }
-  });
-
+  // ---------------------------
+  // USERS
+  // ---------------------------
   const admin = await prisma.user.create({
     data: {
-      firstName: 'Admin',
-      lastName: 'User',
-      email: 'admin@test.com',
-      password: 'hashedpassword',
+      firstName: "Admin",
+      lastName: "User",
+      email: "admin@example.com",
+      password: "hashedpassword",
       role: Role.ADMIN,
-      isVerified: true
-    }
+    },
   });
 
-  // --------------------------
-  // 2. ADDRESSES
-  // --------------------------
-  const address = await prisma.address.create({
+  const owner = await prisma.user.create({
     data: {
-      userId: user.id,
-      line1: '123 Main Street',
-      city: 'New York',
-      state: 'NY',
-      country: 'USA',
-      postal: '10001'
-    }
+      firstName: "Store",
+      lastName: "Owner",
+      email: "owner@example.com",
+      password: "hashedpassword",
+      role: Role.STORE_OWNER,
+    },
   });
 
-  // --------------------------
-  // 3. STORE
-  // --------------------------
+  const customer = await prisma.user.create({
+    data: {
+      firstName: "John",
+      lastName: "Doe",
+      email: "customer@example.com",
+      password: "hashedpassword",
+      role: Role.CUSTOMER,
+    },
+  });
+
+  // ---------------------------
+  // STORE
+  // ---------------------------
   const store = await prisma.store.create({
     data: {
-      name: 'John’s Electronics',
-      slug: 'john-electronics',
-      ownerId: user.id
-    }
+      name: "Tech Store",
+      slug: "tech-store",
+      ownerId: owner.id,
+    },
   });
 
-  // --------------------------
-  // 4. PRODUCTS
-  // --------------------------
+  // ---------------------------
+  // CATEGORY
+  // ---------------------------
+  const category = await prisma.category.create({
+    data: {
+      name: "Electronics",
+    },
+  });
+
+  // ---------------------------
+  // PRODUCTS
+  // ---------------------------
   const product1 = await prisma.product.create({
     data: {
-      name: 'iPhone 15',
-      slug: 'iphone-15',
-      description: 'Latest Apple iPhone.',
-      price: 999,
+      name: "iPhone 15",
+      slug: "iphone-15",
+      price: 1199,
       stock: 50,
-      images: ['iphone.png'],
+      images: ["iphone_15.png"],
       storeId: store.id,
-      createdById: user.id,
-    }
+      createdById: owner.id,
+      categoryId: category.id,
+    },
   });
 
   const product2 = await prisma.product.create({
     data: {
-      name: 'Macbook Pro',
-      slug: 'macbook-pro',
-      description: '16-inch powerhouse.',
-      price: 2499,
-      stock: 30,
-      images: ['macbook.png'],
+      name: "Samsung S24",
+      slug: "samsung-s24",
+      price: 999,
+      stock: 40,
+      images: ["s24.png"],
       storeId: store.id,
-      createdById: user.id,
-    }
+      createdById: owner.id,
+      categoryId: category.id,
+    },
   });
 
-  // --------------------------
-  // 5. CART + CART ITEMS
-  // --------------------------
-  const cart = await prisma.cart.create({
-    data: {
-      userId: user.id,
-      isActive: true
-    }
-  });
-
-  const cartItem1 = await prisma.cartItem.create({
-    data: {
-      cartId: cart.id,
-      productId: product1.id,
-      quantity: 2
-    }
-  });
-
-  const cartItem2 = await prisma.cartItem.create({
-    data: {
-      cartId: cart.id,
-      productId: product2.id,
-      quantity: 1
-    }
-  });
-
-  // --------------------------
-  // 6. COUPONS + USAGE
-  // --------------------------
+  // ---------------------------
+  // COUPON
+  // ---------------------------
   const coupon = await prisma.coupon.create({
     data: {
-      code: 'WELCOME10',
-      description: '10% off for new users',
-      discountType: DiscountType.PERCENTAGE,
+      code: "WELCOME10",
+      description: "10% off",
+      discountType: "PERCENTAGE",
       discountValue: 10,
       startDate: new Date(),
-      endDate: new Date(new Date().setMonth(new Date().getMonth() + 1))
-    }
+      endDate: new Date("2099-01-01"),
+      isActive: true,
+    },
   });
 
-  // --------------------------
-  // 7. ORDER
-  // --------------------------
+  // ---------------------------
+  // ORDER
+  // ---------------------------
   const order = await prisma.order.create({
     data: {
-      userId: user.id,
+      userId: customer.id,
       storeId: store.id,
-      total: 999 * 2 + 2499, // sum of cart items
-      status: OrderStatus.PAID,
-    }
+      status: OrderStatus.PENDING,
+      total: product1.price * 2 + product2.price * 1,
+
+      items: {
+        create: [
+          { productId: product1.id, quantity: 2, price: product1.price },
+          { productId: product2.id, quantity: 1, price: product2.price },
+        ],
+      },
+
+      couponUsage: {
+        create: {
+          userId: customer.id,
+          couponId: coupon.id,
+        },
+      },
+
+      statusHistory: {
+        create: { status: OrderStatus.PENDING },
+      },
+    },
   });
 
-  // --------------------------
-  // 8. ORDER ITEMS
-  // --------------------------
-  const orderItem1 = await prisma.orderItem.create({
-    data: {
-      orderId: order.id,
-      productId: product1.id,
-      price: product1.price,
-      quantity: 2
-    }
-  });
-
-  const orderItem2 = await prisma.orderItem.create({
-    data: {
-      orderId: order.id,
-      productId: product2.id,
-      price: product2.price,
-      quantity: 1
-    }
-  });
-
-  // --------------------------
-  // 9. PAYMENT
-  // --------------------------
-  const payment = await prisma.payment.create({
+  // ---------------------------
+  // PAYMENT
+  // ---------------------------
+  await prisma.payment.create({
     data: {
       orderId: order.id,
       amount: order.total,
       method: PaymentMethod.CARD,
-      status: PaymentStatus.PAID,
-      transactionId: 'txn_123456789'
-    }
+      status: "PAID",
+      transactionId: "TX12345",
+    },
   });
 
-  // --------------------------
-  // 10. ORDER STATUS HISTORY
-  // --------------------------
-  await prisma.orderStatusHistory.create({
+  // ---------------------------
+  // SHIPPING
+  // ---------------------------
+  const address = await prisma.address.create({
+    data: {
+      userId: customer.id,
+      line1: "Street 1",
+      city: "Karachi",
+      state: "Sindh",
+      country: "Pakistan",
+      postal: "12345",
+    },
+  });
+
+  await prisma.shipping.create({
     data: {
       orderId: order.id,
-      status: OrderStatus.PENDING,
-      note: 'Order created'
-    }
+      provider: "DHL",
+      trackingNumber: "TRACK123",
+      addressId: address.id,
+      history: {
+        create: [
+          { status: "PENDING" },
+          { status: "SHIPPED", note: "Left warehouse" },
+        ],
+      },
+    },
   });
 
-  await prisma.orderStatusHistory.create({
-    data: {
-      orderId: order.id,
-      status: OrderStatus.PAID,
-      note: 'Payment completed'
-    }
-  });
-
-  // --------------------------
-  // 11. SHIPPING + TRACKING
-  // --------------------------
-  const shipping = await prisma.shipping.create({
-    data: {
-      orderId: order.id,
-      provider: 'FedEx',
-      trackingNumber: 'FDX123456',
-      status: ShippingStatus.SHIPPED,
-      addressId: address.id
-    }
-  });
-
-  await prisma.shippingHistory.create({
-    data: {
-      shippingId: shipping.id,
-      status: ShippingStatus.SHIPPED,
-      location: 'New York Warehouse',
-      note: 'Package left facility'
-    }
-  });
-
-  // --------------------------
-  // 12. INVENTORY LOGS
-  // --------------------------
-  await prisma.inventoryLog.create({
-    data: {
-      productId: product1.id,
-      change: -2,
-      type: InventoryEvent.PURCHASE
-    }
-  });
-
-  await prisma.inventoryLog.create({
-    data: {
-      productId: product2.id,
-      change: -1,
-      type: InventoryEvent.PURCHASE
-    }
-  });
-
-  // --------------------------
-  // 13. WISHLIST
-  // --------------------------
-  await prisma.wishlist.create({
-    data: {
-      userId: user.id,
-      productId: product2.id
-    }
-  });
-
-  // --------------------------
-  // 14. REVIEWS
-  // --------------------------
-  await prisma.review.create({
-    data: {
-      userId: user.id,
-      productId: product1.id,
-      rating: 5,
-      comment: 'Amazing phone!'
-    }
-  });
-
-  await prisma.review.create({
-    data: {
-      userId: user.id,
-      productId: product2.id,
-      rating: 4,
-      comment: 'Very powerful laptop.'
-    }
-  });
-
-  // --------------------------
-  // 15. COUPON USAGE
-  // --------------------------
-  await prisma.couponUsage.create({
-    data: {
-      couponId: coupon.id,
-      userId: user.id,
-      orderId: order.id
-    }
-  });
-
-  console.log('🌱 Seed completed successfully!');
+  console.log("🌱 Minimal Seed Complete!");
 }
 
-main()
-  .catch(e => {
-    console.error('❌ Seed failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+main().catch(console.error).finally(() => prisma.$disconnect());
