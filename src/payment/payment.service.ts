@@ -79,4 +79,43 @@ export class PaymentService {
       where: { id },
     });
   }
+
+  async updatePaymentStatus(id: string, dto: UpdatePaymentDto) {
+    const payment = await this.prisma.payment.findUnique({
+      where: { id },
+    });
+  
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
+    }
+  
+    // Prevent updating if already final
+    if (payment.status === 'PAID') {
+      throw new BadRequestException('Payment is already paid');
+    }
+  
+    if (payment.status === 'FAILED') {
+      throw new BadRequestException('Payment already failed — cannot update');
+    }
+  
+    if (payment.status === 'REFUNDED') {
+      throw new BadRequestException('Payment already refunded — cannot update');
+    }
+  
+    // Optional: prevent updating to the same status
+    if (dto.status && dto.status === payment.status) {
+      throw new BadRequestException('Payment already has this status');
+    }
+  
+    // Now safe to update the status
+    return this.prisma.payment.update({
+      where: { id },
+      data: {
+        status: dto.status,
+        transactionId: dto.transactionId,
+        metadata: dto.metadata,
+      },
+    });
+  }
+  
 }

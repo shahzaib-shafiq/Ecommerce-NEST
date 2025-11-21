@@ -42,4 +42,9 @@ export class PaymentController {
   remove(@Param('id') id: string) {
     return this.paymentService.remove(id);
   }
+
+  @Patch(':id/status')
+  updateStatus(@Param('id') id: string, @Body() dto: UpdatePaymentDto) {
+    return this.paymentService.updatePaymentStatus(id, dto);
+  }
 }
