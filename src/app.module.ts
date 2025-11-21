@@ -11,6 +11,7 @@ import { PaymentModule } from './payment/payment.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { CoupansModule } from './coupans/coupans.module';
 import { AddressModule } from './address/address.module';
+import { MailsModule } from './mails/mails.module';
 // import other modules
 
 @Module({
@@ -31,6 +32,7 @@ import { AddressModule } from './address/address.module';
     CoupansModule,
     ShippingModule,
     AddressModule,
+    MailsModule,
     
     // other modules...
   ],
