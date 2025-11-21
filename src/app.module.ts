@@ -10,6 +10,7 @@ import { OrdersModule } from './orders/orders.module';
 import { PaymentModule } from './payment/payment.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { CoupansModule } from './coupans/coupans.module';
+import { AddressModule } from './address/address.module';
 // import other modules
 
 @Module({
@@ -29,6 +30,7 @@ import { CoupansModule } from './coupans/coupans.module';
     PaymentModule,
     CoupansModule,
     ShippingModule,
+    AddressModule,
     
     // other modules...
   ],
