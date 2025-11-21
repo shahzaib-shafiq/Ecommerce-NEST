@@ -10,6 +10,8 @@ import { OrdersModule } from './orders/orders.module';
 import { PaymentModule } from './payment/payment.module';
 import { DeliveryModule } from './delivery/delivery.module';
 import { CoupansModule } from './coupans/coupans.module';
+import { ShippingModule } from './shipping/shipping.module';
+import { ShipingModule } from './shiping/shiping.module';
 import { CoupansModule } from './coupans/coupans.module';
 // import other modules
 
@@ -30,6 +32,8 @@ import { CoupansModule } from './coupans/coupans.module';
     PaymentModule,
     DeliveryModule,
     CoupansModule,
+    ShipingModule,
+    ShippingModule,
     
     // other modules...
   ],
