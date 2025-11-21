@@ -1,34 +1,18 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { MailsService } from './mails.service';
-import { CreateMailDto } from './dto/create-mail.dto';
-import { UpdateMailDto } from './dto/update-mail.dto';
+import { Controller, Get } from '@nestjs/common';
+import { MailService } from './mails.service';
 
-@Controller('mails')
-export class MailsController {
-  constructor(private readonly mailsService: MailsService) {}
+@Controller('mail')
+export class MailController {
+  constructor(private readonly mailService: MailService) {}
 
-  @Post()
-  create(@Body() createMailDto: CreateMailDto) {
-    return this.mailsService.create(createMailDto);
-  }
+  @Get('test')
+  async sendTestEmail() {
+    await this.mailService.sendMail({
+      to: 'shafiqshahzaib@gmail.com',
+      subject: 'Test Email — Mail Service Working',
+      html: '<h2>Yes! Your email service is working.</h2>',
+    });
 
-  @Get()
-  findAll() {
-    return this.mailsService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.mailsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMailDto: UpdateMailDto) {
-    return this.mailsService.update(+id, updateMailDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.mailsService.remove(+id);
+    return { message: 'Test email sent successfully' };
   }
 }
