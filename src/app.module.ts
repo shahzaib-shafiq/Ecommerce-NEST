@@ -8,6 +8,9 @@ import { ProductsModule } from './products/products.module';
 import { CartModule } from './cart/cart.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentModule } from './payment/payment.module';
+import { DeliveryModule } from './delivery/delivery.module';
+import { CoupansModule } from './coupans/coupans.module';
+import { CoupansModule } from './coupans/coupans.module';
 // import other modules
 
 @Module({
@@ -25,6 +28,8 @@ import { PaymentModule } from './payment/payment.module';
     CartModule,
     OrdersModule,
     PaymentModule,
+    DeliveryModule,
+    CoupansModule,
     
     // other modules...
   ],
