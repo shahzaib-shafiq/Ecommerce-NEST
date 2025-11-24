@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build": "nest build && mkdir -p dist/src/mails && cp -R src/mails/templates dist/src/mails/",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "prisma:migrate": "node -r dotenv/config node_modules/.bin/prisma migrate dev",

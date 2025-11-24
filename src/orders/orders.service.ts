@@ -3,10 +3,11 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderStatus } from '@prisma/client';
+import { MailService } from '../mails/mails.service';
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService,private mailService: MailService,) {}
 
   // ----------------------------
   // CREATE ORDER (UPDATED)
@@ -63,6 +64,8 @@ export class OrdersService {
       0,
     );
 
+     // 1. Create order in DB
+
     // Transaction — order + items + statusHistory + couponUsage
     return this.prisma.$transaction(async (tx) => {
       const order = await tx.order.create({
@@ -91,6 +94,14 @@ export class OrdersService {
         data: { orderId: order.id, status: OrderStatus.PENDING },
       });
 
+    // 2. Send email
+    await this.mailService.sendOrderCreatedEmail({
+      to: user.email,
+      subject: `Order #${order.id} Created`,
+      order,
+    });
+
+    // 3. Return order
       return order;
     });
   }
