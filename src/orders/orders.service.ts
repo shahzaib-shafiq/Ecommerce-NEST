@@ -14,98 +14,108 @@ export class OrdersService {
   // ----------------------------
   async create(dto: CreateOrderDto) {
     const { userId, storeId, couponId } = dto;
-
+  
     // Validate user
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
-
+  
     // Validate store
     const store = await this.prisma.store.findUnique({ where: { id: storeId } });
     if (!store) throw new NotFoundException('Store not found');
-
-    // Validate coupon
+  
+    // Validate coupon if provided
     if (couponId) {
       const coupon = await this.prisma.coupon.findUnique({
         where: { id: couponId },
       });
       if (!coupon) throw new BadRequestException('Invalid couponId');
     }
-
-    // Fetch real product prices from Product table
+  
+    // Fetch actual product prices
     const productIds = dto.items.map((item) => item.productId);
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds } },
       select: { id: true, price: true },
     });
-
+  
     if (products.length !== dto.items.length) {
       throw new NotFoundException('One or more products were not found');
     }
-
-    // Build orderItems with DB price
+  
+    // Build order items
     const orderItems = dto.items.map((item) => {
       const product = products.find((p) => p.id === item.productId);
-    
+  
       if (!product) {
         throw new NotFoundException(`Product with ID ${item.productId} not found`);
       }
-    
+  
       return {
         productId: item.productId,
         quantity: item.quantity,
-        price: product.price, // Safe now
+        price: product.price,
       };
     });
-    
-
+  
     // Calculate total
     const total = orderItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0,
     );
-
-     // 1. Create order in DB
-
-    // Transaction — order + items + statusHistory + couponUsage
-    return this.prisma.$transaction(async (tx) => {
-      const order = await tx.order.create({
+  
+    // ----------------------------
+    // ✔ PART 1: Transaction (DB ONLY)
+    // ----------------------------
+    const order = await this.prisma.$transaction(async (tx) => {
+      const newOrder = await tx.order.create({
         data: {
           userId,
           storeId,
           total,
           status: OrderStatus.PENDING,
-
+  
           items: {
             create: orderItems,
           },
-
+  
           couponUsage: couponId
             ? {
                 create: {
                   couponId,
-                  userId, // required by Prisma schema
+                  userId,
                 },
               }
             : undefined,
         },
       });
-
+  
       await tx.orderStatusHistory.create({
-        data: { orderId: order.id, status: OrderStatus.PENDING },
+        data: { orderId: newOrder.id, status: OrderStatus.PENDING },
       });
-
-    // 2. Send email
-    await this.mailService.sendOrderCreatedEmail({
-      to: user.email,
-      subject: `Order #${order.id} Created`,
-      order,
+  
+      return newOrder;
     });
-
-    // 3. Return order
-      return order;
-    });
+  
+    // ----------------------------
+    // ✔ PART 2: Email (OUTSIDE transaction)
+    // ----------------------------
+    this.mailService
+      .sendOrderCreatedEmail({
+        to: user.email,
+        subject: `Order #${order.id} Created`,
+        order,
+      })
+      .catch((err) => {
+        console.error('Order email failed:', err);
+        // DO NOT throw here – email fail must NOT break order creation.
+      });
+  
+    // ----------------------------
+    // ✔ Final response
+    // ----------------------------
+    return order;
   }
-
+  
   // ----------------------------
   // DO NOT CHANGE BELOW THIS
   // ----------------------------
