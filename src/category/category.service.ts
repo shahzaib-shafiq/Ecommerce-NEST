@@ -8,14 +8,10 @@ export class CategoryService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateCategoryDto) {
-    // check if name already exists (case insensitive recommended)
     const exists = await this.prisma.category.findFirst({
       where: {
-        name: {
-          equals: dto.name,
-          mode: 'insensitive',
-        },
-        isDeleted: false,
+        name: { equals: dto.name, mode: 'insensitive' },
+        isDeleted: false,   // only reject if ACTIVE category exists
       },
     });
   
@@ -25,7 +21,7 @@ export class CategoryService {
   
     return this.prisma.category.create({
       data: {
-        name: dto.name,
+        name: dto.name.trim(),
       },
     });
   }

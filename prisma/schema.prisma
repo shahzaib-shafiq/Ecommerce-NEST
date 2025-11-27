@@ -387,7 +387,7 @@ model ShippingHistory {
 
 model Category {
   id        String     @id @default(uuid()) @db.Uuid
-  name      String     @unique
+  name      String     
   isDeleted Boolean @default(false)
   products  Product[]  // one category → many products
 }
