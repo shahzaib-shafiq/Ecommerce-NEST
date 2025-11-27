@@ -156,11 +156,10 @@ export class OrdersService {
         price: item.price,
         lineTotal: item.total,
       })),
-      
       subtotal,
-      discountPercentage: coupon ? coupon.discountValue + "%" : 0,
-      discount: discountAmount ,
-      couponApplied: coupon ? coupon.code : null ,
+      discountPercentage: coupon ? coupon.discountValue + '%' : 0,
+      discount: discountAmount,
+      couponApplied: coupon ? coupon.code : null,
       netPayable: netTotal,
       currency: 'USD', // or PKR etc.
       timestamp: new Date(),
