@@ -111,6 +111,28 @@ export class MailService {
     });
   }
 
+  async sendPromotionalEmail({
+    to,
+    variables,
+  }: {
+    to: string;
+    variables: Record<string, string>;
+  }): Promise<nodemailer.SentMessageInfo> {
+    // 1. Load the promotional email template
+    const templateHtml = this.loadTemplate('promotional', true);
+
+    // 2. Inject dynamic variables into template
+    const processedHtml = this.replaceTemplateVariables(templateHtml, variables);
+  
+    // 3. Send email
+    return await this.transporter.sendMail({
+      from: process.env.MAIL_FROM,
+      to,
+      subject: variables.subject || 'Special Offer Just for You!',
+      html: processedHtml,
+    });
+  }
+  
   async sendOrderCreatedEmail({
     to,
     subject,
@@ -151,3 +173,5 @@ export class MailService {
     });
   }
 }
+
+

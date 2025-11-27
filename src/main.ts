@@ -7,8 +7,8 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT') ?? 3000;
-
   await app.listen(port);
+  console.log("Server started at:", new Date().toString());
   console.log(`Server running on port ${port}`);
 }
 

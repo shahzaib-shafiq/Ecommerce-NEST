@@ -12,10 +12,13 @@ import { ShippingModule } from './shipping/shipping.module';
 import { CoupansModule } from './coupans/coupans.module';
 import { AddressModule } from './address/address.module';
 import { MailsModule } from './mails/mails.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { CronModule } from './cron/cron.module';
 // import other modules
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true, // makes config available everywhere
       envFilePath: '.env', // explicitly specify .env file path
@@ -33,6 +36,7 @@ import { MailsModule } from './mails/mails.module';
     ShippingModule,
     AddressModule,
     MailsModule,
+    CronModule,
     
     // other modules...
   ],
