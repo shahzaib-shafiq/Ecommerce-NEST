@@ -1,4 +1,4 @@
-import { IsUUID, IsArray, ValidateNested, IsNumber } from 'class-validator';
+import { IsUUID, IsArray, ValidateNested, IsNumber ,IsString} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateOrderItemDto {
@@ -21,6 +21,9 @@ export class CreateOrderDto {
   @Type(() => CreateOrderItemDto)
   items: CreateOrderItemDto[];
 
-  @IsUUID()
-  couponId?: string;
+  // @IsUUID()
+  // couponId?: string;
+
+  @IsString()
+  couponCode: string;
 }
