@@ -6,11 +6,18 @@ import {
   Patch,
   Delete,
   Body,
+  UseGuards
 } from '@nestjs/common';
 import { CouponService } from './coupans.service'
 import { CreateCouponDto } from './dto/create-coupan.dto';
 import { UpdateCouponDto } from './dto/update-coupan.dto';
 import { CreateCouponUsageDto } from './dto/create-coupon-usage.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/roles.guard';
+import { Roles } from 'src/auth/roles.decorator';
+
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN')
 @Controller('coupons')
 export class CouponController {
   constructor(private readonly couponService: CouponService) {}
