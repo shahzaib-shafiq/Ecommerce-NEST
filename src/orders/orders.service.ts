@@ -1,68 +1,108 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderStatus } from '@prisma/client';
 import { MailService } from '../mails/mails.service';
-
+import { Logger } from '@nestjs/common';
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService,private mailService: MailService,) {}
+  private readonly logger = new Logger(OrdersService.name);
+  constructor(
+    private prisma: PrismaService,
+    private mailService: MailService,
+  ) {}
 
   // ----------------------------
   // CREATE ORDER (UPDATED)
   // ----------------------------
   async create(dto: CreateOrderDto) {
-    const { userId, storeId, couponId } = dto;
-  
+    const { userId, storeId, couponCode } = dto;
+
     // Validate user
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
-  
+
     // Validate store
-    const store = await this.prisma.store.findUnique({ where: { id: storeId } });
+    const store = await this.prisma.store.findUnique({
+      where: { id: storeId },
+    });
     if (!store) throw new NotFoundException('Store not found');
-  
-    // Validate coupon if provided
-    if (couponId) {
-      const coupon = await this.prisma.coupon.findUnique({
-        where: { id: couponId },
+
+    // ----------------------------
+    // ✔ Validate coupon (if provided)
+    // ----------------------------
+    let coupon: any = null;
+    let discountAmount = 0;
+
+    if (couponCode) {
+      coupon = await this.prisma.coupon.findUnique({
+        where: { code: couponCode },
       });
-      if (!coupon) throw new BadRequestException('Invalid couponId');
+
+      if (!coupon) throw new BadRequestException('Invalid couponCode');
+      if (!coupon.isActive || coupon.isDeleted)
+        throw new BadRequestException('Coupon is inactive');
+
+      // Date validation
+      const now = new Date();
+      if (coupon.startDate && now < coupon.startDate)
+        throw new BadRequestException('Coupon not started yet');
+
+      if (coupon.endDate && now > coupon.endDate)
+        throw new BadRequestException('Coupon expired');
     }
-  
-    // Fetch actual product prices
+
+    // Fetch product prices
     const productIds = dto.items.map((item) => item.productId);
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds } },
-      select: { id: true, price: true },
+      select: { id: true, price: true, name: true },
     });
-  
+
     if (products.length !== dto.items.length) {
       throw new NotFoundException('One or more products were not found');
     }
-  
-    // Build order items
+
+    // Build order items + item totals
     const orderItems = dto.items.map((item) => {
       const product = products.find((p) => p.id === item.productId);
-  
+
       if (!product) {
-        throw new NotFoundException(`Product with ID ${item.productId} not found`);
+        throw new NotFoundException(
+          `Product with ID ${item.productId} not found`,
+        );
       }
-  
+
       return {
         productId: item.productId,
         quantity: item.quantity,
         price: product.price,
+        productName: product.name,
+        total: product.price * item.quantity,
       };
     });
-  
-    // Calculate total
-    const total = orderItems.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0,
-    );
-  
+
+    // ----------------------------
+    // ✔ Calculate totals
+    // ----------------------------
+    const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
+
+    // % discount
+    if (coupon) {
+      if (coupon.discountType === 'PERCENTAGE') {
+        discountAmount = (subtotal * coupon.discountValue) / 100;
+      } else if (coupon.discountType === 'FIXED') {
+        discountAmount = coupon.discountValue;
+      }
+    }
+
+    const netTotal = Math.max(0, subtotal - discountAmount);
+
     // ----------------------------
     // ✔ PART 1: Transaction (DB ONLY)
     // ----------------------------
@@ -71,31 +111,26 @@ export class OrdersService {
         data: {
           userId,
           storeId,
-          total,
+          total: netTotal,
           status: OrderStatus.PENDING,
-  
+
           items: {
-            create: orderItems,
+            create: orderItems.map((i) => ({
+              productId: i.productId,
+              quantity: i.quantity,
+              price: i.price,
+            })),
           },
-  
-          couponUsage: couponId
-            ? {
-                create: {
-                  couponId,
-                  userId,
-                },
-              }
-            : undefined,
         },
       });
-  
+
       await tx.orderStatusHistory.create({
         data: { orderId: newOrder.id, status: OrderStatus.PENDING },
       });
-  
+
       return newOrder;
     });
-  
+
     // ----------------------------
     // ✔ PART 2: Email (OUTSIDE transaction)
     // ----------------------------
@@ -105,17 +140,40 @@ export class OrdersService {
         subject: `Order #${order.id} Created`,
         order,
       })
-      .catch((err) => {
-        console.error('Order email failed:', err);
-        // DO NOT throw here – email fail must NOT break order creation.
-      });
-  
+      .catch((err) => console.error('Order email failed:', err));
+
     // ----------------------------
-    // ✔ Final response
+    // ✔ PART 3: Generate Receipt (Final Response)
     // ----------------------------
-    return order;
+    const receipt = {
+      orderId: order.id,
+      user: { id: user.id, email: user.email },
+      store: { id: store.id, name: store.name },
+      items: orderItems.map((item) => ({
+        productId: item.productId,
+        name: item.productName,
+        quantity: item.quantity,
+        price: item.price,
+        lineTotal: item.total,
+      })),
+      subtotal,
+      discountPercentage: coupon ? coupon.discountValue + '%' : 0,
+      discount: discountAmount,
+      couponApplied: coupon ? coupon.code : null,
+      netPayable: netTotal,
+      currency: 'PKR', // or PKR etc.
+      timestamp: new Date().toISOString(),
+    };
+
+    // ----------------------------
+    // ✔ Final response (order + receipt)
+    // ----------------------------
+    return {
+      order,
+      receipt,
+    };
   }
-  
+
   // ----------------------------
   // DO NOT CHANGE BELOW THIS
   // ----------------------------

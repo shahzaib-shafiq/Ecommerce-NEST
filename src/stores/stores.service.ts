@@ -15,6 +15,7 @@ export class StoresService {
     const user = await this.prisma.user.findUnique({
       where: { id: dto.ownerId },
     });
+    
   
     if (!user) {
       throw new NotFoundException(`User with ID ${dto.ownerId} not found`);
