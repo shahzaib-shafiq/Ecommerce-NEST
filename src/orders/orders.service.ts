@@ -161,8 +161,8 @@ export class OrdersService {
       discount: discountAmount,
       couponApplied: coupon ? coupon.code : null,
       netPayable: netTotal,
-      currency: 'USD', // or PKR etc.
-      timestamp: new Date(),
+      currency: 'PKR', // or PKR etc.
+      timestamp: new Date().toISOString(),
     };
 
     // ----------------------------
