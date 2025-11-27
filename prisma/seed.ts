@@ -1,40 +1,44 @@
 // prisma/seed.ts
 import { PrismaClient, Role, OrderStatus, PaymentMethod } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
+const saltRounds = 10;
 
 async function main() {
   console.log('🌱 Running Minimal Seed...');
+  const plainPassword = 'Password@123'; // keep same password for login
+  const hashedPassword = await bcrypt.hash(plainPassword, saltRounds);
 
   // ---------------------------
   // USERS
   // ---------------------------
   const admin = await prisma.user.create({
     data: {
-      firstName: "Admin",
-      lastName: "User",
-      email: "admin@example.com",
-      password: "hashedpassword",
+      firstName: 'Admin',
+      lastName: 'User',
+      email: 'admin@example.com',
+      password: hashedPassword,
       role: Role.ADMIN,
     },
   });
 
   const owner = await prisma.user.create({
     data: {
-      firstName: "Store",
-      lastName: "Owner",
-      email: "owner@example.com",
-      password: "hashedpassword",
+      firstName: 'Store',
+      lastName: 'Owner',
+      email: 'owner@example.com',
+      password: hashedPassword,
       role: Role.STORE_OWNER,
     },
   });
 
   const customer = await prisma.user.create({
     data: {
-      firstName: "John",
-      lastName: "Doe",
-      email: "customer@example.com",
-      password: "hashedpassword",
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'customer@example.com',
+      password: hashedPassword,
       role: Role.CUSTOMER,
     },
   });
@@ -44,8 +48,8 @@ async function main() {
   // ---------------------------
   const store = await prisma.store.create({
     data: {
-      name: "Tech Store",
-      slug: "tech-store",
+      name: 'Tech Store',
+      slug: 'tech-store',
       ownerId: owner.id,
     },
   });
@@ -55,7 +59,7 @@ async function main() {
   // ---------------------------
   const category = await prisma.category.create({
     data: {
-      name: "Electronics",
+      name: 'Electronics',
     },
   });
 
@@ -64,11 +68,11 @@ async function main() {
   // ---------------------------
   const product1 = await prisma.product.create({
     data: {
-      name: "iPhone 15",
-      slug: "iphone-15",
+      name: 'iPhone 15',
+      slug: 'iphone-15',
       price: 1199,
       stock: 50,
-      images: ["iphone_15.png"],
+      images: ['iphone_15.png'],
       storeId: store.id,
       createdById: owner.id,
       categoryId: category.id,
@@ -77,11 +81,11 @@ async function main() {
 
   const product2 = await prisma.product.create({
     data: {
-      name: "Samsung S24",
-      slug: "samsung-s24",
+      name: 'Samsung S24',
+      slug: 'samsung-s24',
       price: 999,
       stock: 40,
-      images: ["s24.png"],
+      images: ['s24.png'],
       storeId: store.id,
       createdById: owner.id,
       categoryId: category.id,
@@ -93,12 +97,12 @@ async function main() {
   // ---------------------------
   const coupon = await prisma.coupon.create({
     data: {
-      code: "WELCOME10",
-      description: "10% off",
-      discountType: "PERCENTAGE",
+      code: 'WELCOME10',
+      description: '10% off',
+      discountType: 'PERCENTAGE',
       discountValue: 10,
       startDate: new Date(),
-      endDate: new Date("2099-01-01"),
+      endDate: new Date('2099-01-01'),
       isActive: true,
     },
   });
@@ -141,8 +145,8 @@ async function main() {
       orderId: order.id,
       amount: order.total,
       method: PaymentMethod.CARD,
-      status: "PAID",
-      transactionId: "TX12345",
+      status: 'PAID',
+      transactionId: 'TX12345',
     },
   });
 
@@ -152,30 +156,32 @@ async function main() {
   const address = await prisma.address.create({
     data: {
       userId: customer.id,
-      line1: "Street 1",
-      city: "Karachi",
-      state: "Sindh",
-      country: "Pakistan",
-      postal: "12345",
+      line1: 'Street 1',
+      city: 'Karachi',
+      state: 'Sindh',
+      country: 'Pakistan',
+      postal: '12345',
     },
   });
 
   await prisma.shipping.create({
     data: {
       orderId: order.id,
-      provider: "DHL",
-      trackingNumber: "TRACK123",
+      provider: 'DHL',
+      trackingNumber: 'TRACK123',
       addressId: address.id,
       history: {
         create: [
-          { status: "PENDING" },
-          { status: "SHIPPED", note: "Left warehouse" },
+          { status: 'PENDING' },
+          { status: 'SHIPPED', note: 'Left warehouse' },
         ],
       },
     },
   });
 
-  console.log("🌱 Minimal Seed Complete!");
+  console.log('🌱 Minimal Seed Complete!');
 }
 
-main().catch(console.error).finally(() => prisma.$disconnect());
+main()
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());
