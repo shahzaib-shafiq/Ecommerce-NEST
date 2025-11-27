@@ -14,6 +14,7 @@ import { AddressModule } from './address/address.module';
 import { MailsModule } from './mails/mails.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CronModule } from './cron/cron.module';
+import { CategoryModule } from './category/category.module';
 // import other modules
 
 @Module({
@@ -37,6 +38,7 @@ import { CronModule } from './cron/cron.module';
     AddressModule,
     MailsModule,
     CronModule,
+    CategoryModule,
     
     // other modules...
   ],
