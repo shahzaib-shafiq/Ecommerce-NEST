@@ -16,6 +16,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { CronModule } from './cron/cron.module';
 import { CategoryModule } from './category/category.module';
 import { UploadModule } from './upload/upload.module';
+import { PdfModule } from './pdf/pdf.module';
 // import other modules
 
 @Module({
@@ -41,6 +42,7 @@ import { UploadModule } from './upload/upload.module';
     CronModule,
     CategoryModule,
     UploadModule,
+    PdfModule,
     
     // other modules...
   ],
