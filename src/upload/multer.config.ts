@@ -32,20 +32,19 @@ export const pdfFileFilter = (req: any, file: any, cb: any) => {
 
 // Excel filter
 export const excelFileFilter = (req: any, file: any, cb: any) => {
-    const allowedMimeTypes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-      'application/vnd.ms-excel',                                        // .xls
-      'text/csv',                                                         // .csv
-      'application/csv',
-    ];
-  
-    if (!allowedMimeTypes.includes(file.mimetype)) {
-      cb(
-        new Error('Only Excel files (.xlsx, .xls) or CSV (.csv) are allowed!'),
-        false,
-      );
-    } else {
-      cb(null, true);
-    }
-  };
-  
+  const allowedMimeTypes = [
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+    'application/vnd.ms-excel', // .xls
+    'text/csv', // .csv
+    'application/csv',
+  ];
+
+  if (!allowedMimeTypes.includes(file.mimetype)) {
+    cb(
+      new Error('Only Excel files (.xlsx, .xls) or CSV (.csv) are allowed!'),
+      false,
+    );
+  } else {
+    cb(null, true);
+  }
+};

@@ -36,7 +36,7 @@ export class PdfService {
         // -----------------------------------------------------
         doc
           .font('Helvetica-Bold')
-          .fontSize(14)
+          .fontSize(16)
           .text('Items Purchased', { underline: true })
           .moveDown(1);
 
