@@ -12,10 +12,40 @@ export const multerConfig = {
     },
   }),
 };
-
+// Image filter
 export const imageFileFilter = (req: any, file: any, cb: any) => {
   if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
     cb(new Error('Only image files are allowed!'), false);
+  } else {
+    cb(null, true);
   }
-  cb(null, true);
 };
+
+// PDF filter
+export const pdfFileFilter = (req: any, file: any, cb: any) => {
+  if (file.mimetype !== 'application/pdf') {
+    cb(new Error('Only PDF files are allowed!'), false);
+  } else {
+    cb(null, true);
+  }
+};
+
+// Excel filter
+export const excelFileFilter = (req: any, file: any, cb: any) => {
+    const allowedMimeTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+      'application/vnd.ms-excel',                                        // .xls
+      'text/csv',                                                         // .csv
+      'application/csv',
+    ];
+  
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      cb(
+        new Error('Only Excel files (.xlsx, .xls) or CSV (.csv) are allowed!'),
+        false,
+      );
+    } else {
+      cb(null, true);
+    }
+  };
+  
