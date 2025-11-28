@@ -162,7 +162,6 @@ export class ProductsService {
               price: Number(row.price),
               stock: Number(row.stock),
               images: row.images ? row.images.split(',') : [],
-
               storeId: row.storeId,
               createdById: row.createdById,
               categoryId: row.categoryId || null,
