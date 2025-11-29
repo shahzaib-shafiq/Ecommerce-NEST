@@ -9,12 +9,16 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderStatus } from '@prisma/client';
 import { MailService } from '../mails/mails.service';
 import { Logger } from '@nestjs/common';
+import { PdfService } from '../pdf/pdf.service';
+import * as fs from 'fs';
+import * as path from 'path';
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
   constructor(
     private prisma: PrismaService,
     private mailService: MailService,
+    private pdfService: PdfService,
   ) {}
 
   // ----------------------------
@@ -166,11 +170,32 @@ export class OrdersService {
     };
 
     // ----------------------------
+    // ✔ PART 4: Generate PDF Receipt
+    // ----------------------------
+    // Generate full PDF buffer (async)
+    const pdfBuffer = await this.pdfService.generateReceiptPdf(receipt);
+
+    // Ensure receipts directory exists
+    const receiptsDir = path.join(process.cwd(), 'uploads', 'receipts');
+    if (!fs.existsSync(receiptsDir)) {
+      fs.mkdirSync(receiptsDir, { recursive: true });
+    }
+
+    // Save PDF to local storage
+    const fileName = `order-${order.id}.pdf`;
+    const filePath = path.join(receiptsDir, fileName);
+
+    fs.writeFileSync(filePath, pdfBuffer);
+
+    // Output public URL
+    const pdfUrl = `${process.env.APP_URL}/uploads/receipts/${fileName}`;
+    // ----------------------------
     // ✔ Final response (order + receipt)
     // ----------------------------
     return {
       order,
       receipt,
+      pdfUrl,
     };
   }
 
