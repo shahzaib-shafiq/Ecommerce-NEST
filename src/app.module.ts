@@ -17,6 +17,7 @@ import { CronModule } from './cron/cron.module';
 import { CategoryModule } from './category/category.module';
 import { UploadModule } from './upload/upload.module';
 import { PdfModule } from './pdf/pdf.module';
+import { PaymentsModule } from './payments/payments.module';
 // import other modules
 
 @Module({
@@ -43,6 +44,7 @@ import { PdfModule } from './pdf/pdf.module';
     CategoryModule,
     UploadModule,
     PdfModule,
+    PaymentsModule,
     
     // other modules...
   ],
