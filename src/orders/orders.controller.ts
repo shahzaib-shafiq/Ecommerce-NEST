@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete,UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
@@ -11,13 +12,19 @@ import { Roles } from 'src/auth/roles.decorator';
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  // --------------------------------------------------
-  // CREATE ORDER
-  // POST /orders
-  // --------------------------------------------------
   @Post()
   create(@Body() dto: CreateOrderDto) {
     return this.ordersService.create(dto);
+  }
+
+  @Get()
+  findAll(@Query() query: PaginationQueryDto) {
+    return this.ordersService.findAll(query.page, query.limit);
+  }
+
+  @Get('user/:userId')
+  findByUser(@Param('userId') userId: string) {
+    return this.ordersService.findByUser(userId);
   }
 
   @Get(':id')
@@ -31,20 +38,6 @@ export class OrdersController {
     @Body() dto: UpdateOrderDto,
   ) {
     return this.ordersService.updateStatus(id, dto.status);
-  }
-
-  @Get()
-  findAll() {
-    return this.ordersService.findAll();
-  }
-
-  // --------------------------------------------------
-  // GET ORDERS BY USER
-  // GET /orders/user/:userId
-  // --------------------------------------------------
-  @Get('user/:userId')
-  findByUser(@Param('userId') userId: string) {
-    return this.ordersService.findByUser(userId);
   }
 
   // --------------------------------------------------

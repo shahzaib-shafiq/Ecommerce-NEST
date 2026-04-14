@@ -8,7 +8,7 @@ import {
 } from '@prisma/client';
 
 const prisma = new PrismaClient();
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 const saltRounds = 10;
 const random = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1)) + min;

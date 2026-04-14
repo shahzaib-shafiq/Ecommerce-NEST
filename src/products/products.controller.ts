@@ -1,12 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete ,UseGuards,BadRequestException,UseInterceptors} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, BadRequestException, UseInterceptors, Query } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadedFile } from '@nestjs/common';
-// import { FileInterceptor } from '@nestjs/platform-express';
-import { multerConfig,excelFileFilter,} from '../upload/multer.config';
+import { multerConfig, excelFileFilter } from '../upload/multer.config';
+
 @UseGuards(JwtAuthGuard)
 @Controller('products')
 export class ProductsController {
@@ -18,8 +19,8 @@ export class ProductsController {
   }
 
   @Get()
-  findAll() {
-    return this.productsService.findAll();
+  findAll(@Query() query: PaginationQueryDto) {
+    return this.productsService.findAll(query.page, query.limit);
   }
 
   @Get(':id')

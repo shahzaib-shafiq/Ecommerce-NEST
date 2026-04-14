@@ -3,12 +3,15 @@ import {
   Post,
   UseInterceptors,
   UploadedFile,
+  UseGuards,
 } from '@nestjs/common';
 
 import { FileInterceptor } from '@nestjs/platform-express';
-import { multerConfig, imageFileFilter ,pdfFileFilter,excelFileFilter,} from './multer.config';
+import { multerConfig, imageFileFilter, pdfFileFilter, excelFileFilter } from './multer.config';
 import { UploadService } from './upload.service';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('upload')
 export class UploadController {
   constructor(private readonly uploadService: UploadService) {}

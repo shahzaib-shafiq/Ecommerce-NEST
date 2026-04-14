@@ -24,17 +24,24 @@ export class UsersService {
     return safeUser;
   }
 
-  // FIND ALL USERS (excluding soft-deleted)
-  async findAll() {
-    const users = await this.prisma.user.findMany({
-      where: { isDeleted: false },
-      orderBy: { createdAt: 'desc' },
-    });
+  async findAll(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where: { isDeleted: false },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.user.count({ where: { isDeleted: false } }),
+    ]);
 
-    return users.map((u) => {
+    const items = users.map((u) => {
       const { password, ...safe } = u;
       return safe;
     });
+
+    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   // FIND ONE USER

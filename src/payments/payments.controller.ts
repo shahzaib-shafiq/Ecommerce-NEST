@@ -4,15 +4,18 @@ import {
   Post,
   Req,
   Headers,
+  UseGuards,
 } from "@nestjs/common";
 import type { RawBodyRequest } from "@nestjs/common";
 import { PaymentsService } from "./payments.service";
 import { CreatePaymentIntentDto } from "./dto/create-payment-intent.dto";
+import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
 
 @Controller("payments")
 export class PaymentsController {
   constructor(private paymentsService: PaymentsService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post("create-payment-intent")
   async createPaymentIntent(@Body() dto: CreatePaymentIntentDto) {
     return this.paymentsService.createPaymentIntent(dto.amount, dto.currency);

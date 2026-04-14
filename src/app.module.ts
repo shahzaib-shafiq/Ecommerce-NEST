@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import * as Joi from 'joi';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -18,15 +19,29 @@ import { CategoryModule } from './category/category.module';
 import { UploadModule } from './upload/upload.module';
 import { PdfModule } from './pdf/pdf.module';
 import { PaymentsModule } from './payments/payments.module';
-// import other modules
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({
-      isGlobal: true, // makes config available everywhere
-      envFilePath: '.env', // explicitly specify .env file path
-      expandVariables: true, // enable variable expansion in .env
+      isGlobal: true,
+      envFilePath: '.env',
+      expandVariables: true,
+      validationSchema: Joi.object({
+        DATABASE_URL: Joi.string().required(),
+        JWT_SECRET: Joi.string().required(),
+        JWT_EXPIRES_IN: Joi.string().default('7d'),
+        PORT: Joi.number().default(3000),
+        APP_URL: Joi.string().default('http://localhost:3000'),
+        STRIPE_SECRET_KEY: Joi.string().allow('').default(''),
+        STRIPE_WEBHOOK_SECRET: Joi.string().allow('').default(''),
+        MAIL_HOST: Joi.string().allow('').default(''),
+        MAIL_PORT: Joi.number().default(587),
+        MAIL_USER: Joi.string().allow('').default(''),
+        MAIL_PASS: Joi.string().allow('').default(''),
+        MAIL_FROM: Joi.string().allow('').default(''),
+        CORS_ORIGINS: Joi.string().optional(),
+      }),
     }),
     PrismaModule,
     AuthModule,
@@ -45,8 +60,6 @@ import { PaymentsModule } from './payments/payments.module';
     UploadModule,
     PdfModule,
     PaymentsModule,
-    
-    // other modules...
   ],
 })
 export class AppModule {}

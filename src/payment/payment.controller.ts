@@ -5,7 +5,8 @@ import {
   Patch,
   Delete,
   Param,
-  Body
+  Body,
+  UseGuards,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -14,7 +15,8 @@ import { Roles } from 'src/auth/roles.decorator';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 
-@Controller('payments')
+@UseGuards(JwtAuthGuard)
+@Controller('payment')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 

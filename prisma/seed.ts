@@ -1,6 +1,6 @@
 // prisma/seed.ts
 import { PrismaClient, Role, OrderStatus, PaymentMethod } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 const saltRounds = 10;

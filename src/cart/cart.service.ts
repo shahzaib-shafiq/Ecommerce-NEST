@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCartDto } from './dto/create-cart.dto';
 import { AddCartItemDto } from './dto/add-cart-item.dto';
@@ -8,9 +8,6 @@ import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 export class CartService {
   constructor(private prisma: PrismaService) {}
 
-  // ----------------------------
-  // CREATE A CART FOR USER
-  // ----------------------------
   async create(dto: CreateCartDto) {
     return await this.prisma.cart.create({
       data: {
@@ -19,13 +16,10 @@ export class CartService {
     });
   }
 
-  // ----------------------------
-  // GET CART BY USER ID
-  // ----------------------------
   async findCartByUser(userId: string) {
     const cart = await this.prisma.cart.findFirst({
-      where: { userId, isActive: true },
-      include: { items: true },
+      where: { userId, isActive: true, isDeleted: false },
+      include: { items: { include: { product: true } } },
     });
 
     if (!cart) throw new NotFoundException('Active cart not found');
@@ -33,16 +27,29 @@ export class CartService {
     return cart;
   }
 
-  // ----------------------------
-  // ADD ITEM TO CART
-  // ----------------------------
   async addItem(dto: AddCartItemDto) {
-    return await this.prisma.cartItem.create({
-      data: {
-        cartId: dto.cartId,
-        productId: dto.productId,
-        quantity: dto.quantity,
-      },
+    return await this.prisma.$transaction(async (tx) => {
+      const product = await tx.product.findUnique({
+        where: { id: dto.productId },
+      });
+
+      if (!product || product.isDeleted) {
+        throw new NotFoundException('Product not found');
+      }
+
+      if (product.stock < dto.quantity) {
+        throw new BadRequestException(
+          `Insufficient stock. Available: ${product.stock}, Requested: ${dto.quantity}`,
+        );
+      }
+
+      return tx.cartItem.create({
+        data: {
+          cartId: dto.cartId,
+          productId: dto.productId,
+          quantity: dto.quantity,
+        },
+      });
     });
   }
 

@@ -53,17 +53,19 @@ export class ProductsService {
     });
   }
 
-  // ----------------------------
-  // GET ALL PRODUCTS
-  // ----------------------------
-  async findAll() {
-    return await this.prisma.product.findMany({
-      where: { isDeleted: false },
-      include: {
-        store: true,
-        createdBy: true,
-      },
-    });
+  async findAll(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      this.prisma.product.findMany({
+        where: { isDeleted: false },
+        include: { store: true, createdBy: true },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.product.count({ where: { isDeleted: false } }),
+    ]);
+    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   // ----------------------------

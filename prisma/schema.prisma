@@ -101,6 +101,10 @@ model User {
   wishlist    Wishlist[]
   couponUsage CouponUsage[]
   addresses   Address[]
+
+  @@index([email])
+  @@index([role])
+  @@index([isDeleted])
 }
 
 // STORE
@@ -118,6 +122,10 @@ model Store {
   isDeleted Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([slug])
+  @@index([isDeleted])
 }
 
 // PRODUCT
@@ -148,6 +156,12 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   isDeleted Boolean @default(false)
+
+  @@index([storeId])
+  @@index([createdById])
+  @@index([categoryId])
+  @@index([slug])
+  @@index([isDeleted])
 }
 
 // CART
@@ -161,7 +175,10 @@ model Cart {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-   isDeleted Boolean @default(false)
+  isDeleted Boolean @default(false)
+
+  @@index([userId])
+  @@index([isDeleted])
 }
 
 // CART ITEM
@@ -202,6 +219,11 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   isDeleted Boolean @default(false)
+
+  @@index([userId])
+  @@index([storeId])
+  @@index([status])
+  @@index([isDeleted])
 }
 
 // ORDER ITEM
@@ -219,6 +241,9 @@ model OrderItem {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([productId])
 }
 
 // PAYMENT
@@ -236,6 +261,9 @@ model Payment {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([status])
 }
 
 // ORDER STATUS HISTORY

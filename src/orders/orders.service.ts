@@ -27,13 +27,11 @@ export class OrdersService {
   async create(dto: CreateOrderDto) {
     const { userId, storeId, couponCode } = dto;
 
-    // Validate user
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findFirst({ where: { id: userId, isDeleted: false } });
     if (!user) throw new NotFoundException('User not found');
 
-    // Validate store
-    const store = await this.prisma.store.findUnique({
-      where: { id: storeId },
+    const store = await this.prisma.store.findFirst({
+      where: { id: storeId, isDeleted: false },
     });
     if (!store) throw new NotFoundException('Store not found');
 
@@ -100,7 +98,7 @@ export class OrdersService {
     if (coupon) {
       if (coupon.discountType === 'PERCENTAGE') {
         discountAmount = (subtotal * coupon.discountValue) / 100;
-      } else if (coupon.discountType === 'FIXED') {
+      } else if (coupon.discountType === 'FLAT') {
         discountAmount = coupon.discountValue;
       }
     }
@@ -219,14 +217,19 @@ export class OrdersService {
     return order;
   }
 
-  async findAll() {
-    return this.prisma.order.findMany({
-      include: {
-        items: true,
-        shipping: true,
-        statusHistory: true,
-      },
-    });
+  async findAll(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where: { isDeleted: false },
+        include: { items: true, shipping: true, statusHistory: true },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.order.count({ where: { isDeleted: false } }),
+    ]);
+    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async updateStatus(id: string, status: OrderStatus) {
@@ -253,7 +256,7 @@ export class OrdersService {
 
   async findByUser(userId: string) {
     return this.prisma.order.findMany({
-      where: { userId },
+      where: { userId, isDeleted: false },
       include: {
         items: true,
         payments: true,
